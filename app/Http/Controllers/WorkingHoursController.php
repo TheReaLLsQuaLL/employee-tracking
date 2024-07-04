@@ -24,22 +24,41 @@ class WorkingHoursController extends Controller
     }
     public function store(Request $request): \Illuminate\Http\RedirectResponse
     {
-        $workHourLog = new EmployeeLog();
-        // save via model
-        $workHourLog->start = \Carbon\Carbon::now();
-        $workHourLog->users_id= $request->users_id;
-        $workHourLog->projects_id = $request->projects_id;
-        $workHourLog->save();
-        //return successfully with message
-        return redirect()->route('dashboard.index')->with('start', 'Task Started');
+        $request->validate([
+            'users_id' => 'required|exists:users,id',
+            'projects_id' => 'required|exists:projects,id',
+        ]);
+
+        try {
+            $workHourLog = new EmployeeLog();
+            $workHourLog->start = Carbon::now();
+            $workHourLog->users_id = $request->users_id;
+            $workHourLog->projects_id = $request->projects_id;
+            $workHourLog->save();
+
+            return redirect()->route('dashboard.index')->with('start', 'Task Started');
+        } catch (\Exception $e) {
+            return redirect()->route('dashboard.index')->withErrors('Error starting task.');
+        }
     }
+
     public function stop(Request $request): \Illuminate\Http\RedirectResponse
     {
         $workHourLog = EmployeeLog::find($request->id);
-        $workHourLog->end = \Carbon\Carbon::now();
-        $workHourLog->save();
-        return redirect()->route('dashboard.index')->with('stop', 'Task Stopped');
+        if (!$workHourLog) {
+            return redirect()->route('dashboard.index')->withErrors('Task not found.');
+        }
+
+        try {
+            $workHourLog->end = Carbon::now();
+            $workHourLog->save();
+
+            return redirect()->route('dashboard.index')->with('stop', 'Task Stopped');
+        } catch (\Exception $e) {
+            return redirect()->route('dashboard.index')->withErrors('Error stopping task.');
+        }
     }
+
     public function edit($id)
     {
         $task = EmployeeLog::find($id);

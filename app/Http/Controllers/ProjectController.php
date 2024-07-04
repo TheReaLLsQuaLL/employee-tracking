@@ -16,21 +16,21 @@ class ProjectController extends Controller
     public function store(Request $request){
         $validator = Validator::make($request->all(), [
             'name' => 'required|string|max:255',
-            'start' => 'required',
-            'end' => 'required',
+            'start' => 'required|date_format:d/m/Y',
+            'end' => 'required|date_format:d/m/Y|after_or_equal:start',
         ]);
 
         if($validator->fails()) {
-            return redirect()->back()->with('error', $validator);
+            return redirect()->back()->withErrors($validator)->withInput();
         }
-        $project =  new Project();
+        $project = new Project();
 
         $project->name = $request->name;
         $project->start = Carbon::createFromFormat('d/m/Y', $request->start)->format('Y-m-d');
-        $project->end = Carbon::createFromFormat('d/m/Y', $request->end)->format('Y-m-d');;
+        $project->end = Carbon::createFromFormat('d/m/Y', $request->end)->format('Y-m-d');
         $project->save();
 
-        return redirect()->route('dashboard.index')->with('project_created', 'Project successfully created.');
-
+        return redirect()->route('dashboard.index')->with('success', 'Project successfully created.');
     }
+
 }
